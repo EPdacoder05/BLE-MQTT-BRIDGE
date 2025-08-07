@@ -1,0 +1,9 @@
+# Virtual Environment
+venv/
+
+# Secrets
+secrets.yaml
+*.secrets
+
+# Python cache
+__pycache__/
