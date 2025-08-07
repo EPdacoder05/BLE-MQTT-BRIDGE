@@ -1,86 +1,18 @@
-# 🌈 BLE-MQTT Bridge (Lotus Lantern / ELK-BLEDOM)
+### Device Discovery
 
-A lightweight Python bridge that lets Home Assistant control BLE RGB LED devices (like Lotus Lantern / ELK-BLEDOM) over MQTT. It translates MQTT JSON commands into BLE packets to control power, color, and brightness.
+To control a new device, you first need its **MAC address** and the correct **handle** for the command characteristic.
 
----
+1.  **Find the MAC Address:** Use a Bluetooth scanning tool to find your device. On most Linux systems, you can use `bluetoothctl`:
+    ```bash
+    # Start the tool
+    bluetoothctl
+    # Start scanning
+    scan on
+    # Look for your device in the list and copy its MAC address
+    ```
 
-## 🔧 Features
-
-- Translates Home Assistant MQTT JSON payloads into BLE RGB commands
-- Supports power on/off, RGB color, and brightness control
-- Auto-reconnects to BLE device and maintains last known state
-- Optional state publishing for HA feedback (commented in code)
-
----
-
-## 🚀 Quick Start
-
-### 1. Clone & Install Dependencies
-
-```bash
-git clone https://github.com/yourusername/ble-mqtt-bridge.git
-cd ble-mqtt-bridge
-pip install -r requirements.txt
-```
-
-### 2. Configure Your Device
-
-Edit `bt_mqtt_lotus.py`:
-
-- Set `DEVICE_MAC_ADDRESS`
-- Set MQTT broker IP and topic
-- Optionally add MQTT username/password
-
-### 3. Run the Bridge
-
-```bash
-python3 bt_mqtt_lotus.py
-```
-
----
-
-## 🏠 Home Assistant Example
-
-```yaml
-light:
-  - platform: mqtt
-    name: "Bedframe Light"
-    schema: json
-    command_topic: "bedframe/light/set_json"
-    state_topic: "bedframe/light/state_json"
-    brightness: true
-    rgb: true
-```
-
-Make sure the topics and structure match what your script listens to.
-
----
-
-## 📦 Requirements
-
-- Python 3.x
-- `bluepy` (Bluetooth LE control)
-- `paho-mqtt` (MQTT communication)
-
-Install with:
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 📄 License
-
-MIT License — see [`LICENSE`](LICENSE) for full terms.
-
----
-
-## 💡 Future Goals
-
-- Async BLE + MQTT support
-- YAML/ENV config support
-- HA Add-on packaging or Dockerization
-- Extended device model compatibility
-
-> Until then, keep it lean and hackable.
+2.  **Find the Characteristic Handle:** Run the following command, replacing `<YOUR_DEVICE_MAC>` with the address you found.
+    ```bash
+    sudo gatttool -t public -b <YOUR_DEVICE_MAC> --char-desc
+    ```
+    Look for the line containing the UUID `0000fff3-0000-1000-8000-00805f9b34fb`. The `handle` value on that line is what you need to set in the script.
