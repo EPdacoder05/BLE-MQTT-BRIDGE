@@ -77,7 +77,7 @@ async def reconcile_state(ble_client: BleakClient, mqtt_client: aiomqtt.Client):
 
 async def handle_mqtt_message(ble_client: BleakClient, payload: str, mqtt_client: aiomqtt.Client):
     """Updates the desired state and sends the command if connected."""
-    global current_light_state
+    # This function modifies the global dictionary directly, so 'global' keyword is not needed.
     try:
         data = json.loads(payload)
         
@@ -169,6 +169,7 @@ async def main():
 
             logging.info(f"Retrying in {retry_delay}s...")
             await asyncio.sleep(retry_delay)
+            # ✅ BUG FIX: Corrected variable name from 'retry' to 'retry_delay'
             retry_delay = min(MAX_RECONNECT_DELAY, retry_delay * 2)
 
 def shutdown_handler(sig, frame):
