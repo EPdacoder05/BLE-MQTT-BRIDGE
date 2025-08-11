@@ -1,0 +1,60 @@
+async def send_update_to_light(ble_client: BleakClient):
+    """Sends the current color and brightness commands to the light."""
+    if current_light_state["state"] == "ON":
+        color = current_light_state["color"]
+        r, g, b = int(color["r"]), int(color["g"]), int(color["b"])
+        color_cmd = f"7e070503{r:02x}{g:02x}{b:02x}00ef"
+        await send_ble_command(ble_client, color_cmd)
+
+        brightness_ha = current_light_state["brightness"]
+        brightness_ble = max(1, min(100, int((brightness_ha / 255.0) * 100)))
+        brightness_cmd = f"7e0501{brightness_ble:02x}000000ef"
+        await send_ble_command(ble_client, brightness_cmd)
+    else: # State is OFF
+        await send_ble_command(ble_client, "7e0404000000ff00ef")
+
+async def reconcile_state(ble_client: BleakClient, mqtt_client: aiomqtt.Client):
+    """Makes the physical light match the desired state upon connection."""
+    logging.info(f"Reconciling state to: {current_light_state}")
+    await send_update_to_light(ble_client)
+    
+    await mqtt_client.publish(
+        f"{CONFIG['base_topic']}/state",
+        payload=json.dumps(current_light_state),
+        retain=True,
+    )
+
+async def handle_mqtt_message(ble_client: BleakClient, payload: str, mqtt_client: aiomqtt.Client):
+    """Updates the desired state and sends the command if connected."""
+    global current_light_state
+    try:
+        data = json.loads(payload)
+        
+        is_turning_on_from_off = (
+            "state" in data and 
+            data["state"].upper() == "ON" and 
+            current_light_state["state"] == "OFF"
+        )
+
+        current_light_state.update(data)
+        logging.info(f"Desired state updated to: {current_light_state}")
+        
+        # Publish the new state to HA for immediate UI feedback
+        await mqtt_client.publish(
+            f"{CONFIG['base_topic']}/state",
+            payload=json.dumps(current_light_state),
+            retain=True,
+        )
+
+        # ✅ NEW LOGIC: If connected, send the command immediately.
+        # If not connected, the reconcile_state function will handle it upon reconnect.
+        if ble_client.is_connected:
+            if is_turning_on_from_off:
+                logging.info("Turning ON from OFF state. Forcing a hard reconnect to wake device.")
+                disconnected_event.set() # Trigger reconnect for wake-up
+            else:
+                # If just changing color/brightness while already on, send update immediately
+                await send_update_to_light(ble_client)
+        
+    except Exception as e:
+        logging.error(f"Error processing MQTT message: {e}")
