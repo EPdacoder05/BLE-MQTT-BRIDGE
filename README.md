@@ -30,6 +30,24 @@ The **MQTT Broker** acts as a central post office. Home Assistant drops off a le
 `Home Assistant UI -> MQTT Broker -> Python Script -> Bluetooth Adapter -> Light Strip`
 
 
+MQTT Setup
+This script requires a running MQTT broker. The script connects to the broker, subscribes to a command topic, and publishes state updates. All MQTT configuration is handled in the secrets.yaml file.
+
+Create a secrets.yaml file in the same directory as the script with the following format:
+
+# Your private credentials and configuration
+# This file should be added to .gitignore and NOT committed to your repository.
+
+mqtt_broker: "127.0.0.1" # IP address of your MQTT broker
+mqtt_port: 1883
+mqtt_username: "your_mqtt_user"
+mqtt_password: "your_mqtt_password"
+
+device_mac: "BE:67:00:5B:04:4A" # MAC address of your BLE device
+base_topic: "bedframe/light" # The base topic for Home Assistant integration
+
+
+
 
 ## Deployment
 
