@@ -6,9 +6,9 @@ A production-grade Python bridge that integrates cheap, ELK-BLEDOM based BLE RGB
 
 This project began as a experiment to see if it was possible to manage and control the light strip in Home Assistant, but since it has no official integration, it then turned to reverse-engineering the communication between device and the app it belonged to.
 
-1.  **Phase 1: The `gatttool` Hack:** Using the deprecated `gatttool` utility, we were able to intercept and identify the raw byte commands needed to control the light's power, color, and brightness. An initial script was built around this, but it suffered from extreme instability due to constantly creating and destroying BLE connections.
+1.  **Phase 1: The `gatttool` Hack:** Using the deprecated `gatttool` utility, we intercepted and identified the raw byte commands needed to control the light's power, color, and brightness. An initial script was built around this, but it suffered from extreme instability.
 
-2.  **Phase 2: The `bleak` Refactor:** The script was re-architected from the ground up using `bleak`, a modern, asynchronous Python library. This enabled a persistent connection, but revealed a "deep sleep" bug in the controller's firmware where it would become unresponsive after being turned off.
+2.  **Phase 2: The `bleak` Refactor:** The script was re-architected from the ground up using `bleak`, a modern, asynchronous Python library. This enabled a persistent connection but revealed a "deep sleep" bug in the controller's firmware where it would become unresponsive after being turned off.
 
 3.  **Phase 3: The "Aggressive Wake-Up":** The final breakthrough was to combine the stability of `bleak` with the brute-force nature of the original hack. The script was engineered with a "software power cycle" that forces a full, aggressive reconnection *only* when turning the light on from an off state, reliably shocking the controller awake.
 
@@ -18,11 +18,34 @@ This project began as a experiment to see if it was possible to manage and contr
 * **"Aggressive Wake-Up":** Reliably turns the light on from an `OFF` state by forcing a reconnect.
 * **State Reconciliation:** Remembers the last command from Home Assistant and restores it upon reconnection.
 * **HA Availability:** Reports `online`/`offline` status to Home Assistant for a seamless UI experience.
-* **Secure:** Loads all sensitive information (MAC address, MQTT credentials) from a `secrets.yaml` file that is not committed to the repository.
+* **Secure:** Loads all sensitive information (MAC address, MQTT credentials) from a `secrets.yaml` file.
+
+## How It Works: The Architecture
+
+This bridge works by creating a "translator" that sits between Home Assistant's world of MQTT messages and the light strip's world of Bluetooth commands.
+
+The **MQTT Broker** acts as a central post office. Home Assistant drops off a letter (a JSON command), and the Python script picks it up, translates it, and delivers it to the light strip via Bluetooth.
+
+**Flow of a Command:**
+`Home Assistant UI -> MQTT Broker -> Python Script -> Bluetooth Adapter -> Light Strip`
+
+
 
 ## Deployment
 
-This script is designed to run 24/7 as a `systemd` service on a Linux host (like a Raspberry Pi) that also runs the MQTT broker and Home Assistant. See the provided `ble-mqtt-bridge.service` file for a template. Containerizing the script and broker using `docker-compose` is the recommended next step for a full DevOps deployment.
+This script is designed to run 24/7 as a `systemd` service on a Linux host (like a Raspberry Pi) that also runs the MQTT broker and Home Assistant. Containerizing the script and broker using `docker-compose` is the recommended next step for a full DevOps deployment.
+
+#### Final Project Structure:
+```
+ble-mqtt-bridge/
+├── .git/
+├── venv/
+├── .gitignore
+├── ble_mqtt_bridge.py  # The main Python script
+├── requirements.txt
+├── secrets.yaml        # Your private credentials
+└── ble-mqtt-bridge.service # The systemd service file
+```
 
 ## Home Assistant Integration
 
