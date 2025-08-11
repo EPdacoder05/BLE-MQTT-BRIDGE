@@ -4,7 +4,7 @@ A production-grade Python bridge that integrates cheap, ELK-BLEDOM based BLE RGB
 
 ## The Journey: From Hack to Stable Service
 
-This project began as an exercise in reverse-engineering. The target device, a generic BLE light strip, had no official integration.
+This project began as a experiment to see if it was possible to manage and control the light strip in Home Assistant, but since it has no official integration, it then turned to reverse-engineering the communication between device and the app it belonged to.
 
 1.  **Phase 1: The `gatttool` Hack:** Using the deprecated `gatttool` utility, we were able to intercept and identify the raw byte commands needed to control the light's power, color, and brightness. An initial script was built around this, but it suffered from extreme instability due to constantly creating and destroying BLE connections.
 
