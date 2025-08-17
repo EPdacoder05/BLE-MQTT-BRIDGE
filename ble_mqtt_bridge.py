@@ -77,7 +77,6 @@ async def reconcile_state(ble_client: BleakClient, mqtt_client: aiomqtt.Client):
 
 async def handle_mqtt_message(ble_client: BleakClient, payload: str, mqtt_client: aiomqtt.Client):
     """Updates the desired state and sends the command if connected."""
-    global current_light_state
     try:
         data = json.loads(payload)
         
